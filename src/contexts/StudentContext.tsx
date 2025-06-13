@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from 'react';
 
 export interface Student {
@@ -33,11 +32,22 @@ export interface Test {
   duration: number;
 }
 
+export interface AttendanceRecord {
+  id: string;
+  studentId: string;
+  subjectGroupId: string;
+  subject: string;
+  date: string;
+  status: 'present' | 'absent' | 'late';
+  remarks?: string;
+}
+
 interface StudentContextType {
   students: Student[];
   subjectGroups: SubjectGroup[];
   timetable: TimeSlot[];
   tests: Test[];
+  attendance: AttendanceRecord[];
   addStudent: (student: Omit<Student, 'id'>) => void;
   updateStudent: (id: string, student: Partial<Student>) => void;
   deleteStudent: (id: string) => void;
@@ -48,6 +58,10 @@ interface StudentContextType {
   addTest: (test: Omit<Test, 'id'>) => void;
   updateTest: (id: string, test: Partial<Test>) => void;
   deleteTest: (id: string) => void;
+  markAttendance: (attendance: Omit<AttendanceRecord, 'id'>) => void;
+  updateAttendance: (id: string, attendance: Partial<AttendanceRecord>) => void;
+  getAttendanceByGroup: (groupId: string) => AttendanceRecord[];
+  getAttendanceByStudent: (studentId: string) => AttendanceRecord[];
 }
 
 const StudentContext = createContext<StudentContextType | undefined>(undefined);
@@ -78,6 +92,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [subjectGroups, setSubjectGroups] = useState<SubjectGroup[]>([]);
   const [timetable, setTimetable] = useState<TimeSlot[]>([]);
   const [tests, setTests] = useState<Test[]>([]);
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
 
   const addStudent = (student: Omit<Student, 'id'>) => {
     const newStudent = {
@@ -180,12 +195,36 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setTests(prev => prev.filter(test => test.id !== id));
   };
 
+  const markAttendance = (attendance: Omit<AttendanceRecord, 'id'>) => {
+    const newAttendance = {
+      ...attendance,
+      id: Date.now().toString(),
+    };
+    setAttendance(prev => [...prev, newAttendance]);
+    console.log('Marked attendance:', newAttendance);
+  };
+
+  const updateAttendance = (id: string, updatedAttendance: Partial<AttendanceRecord>) => {
+    setAttendance(prev => prev.map(record => 
+      record.id === id ? { ...record, ...updatedAttendance } : record
+    ));
+  };
+
+  const getAttendanceByGroup = (groupId: string) => {
+    return attendance.filter(record => record.subjectGroupId === groupId);
+  };
+
+  const getAttendanceByStudent = (studentId: string) => {
+    return attendance.filter(record => record.studentId === studentId);
+  };
+
   return (
     <StudentContext.Provider value={{
       students,
       subjectGroups,
       timetable,
       tests,
+      attendance,
       addStudent,
       updateStudent,
       deleteStudent,
@@ -196,6 +235,10 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       addTest,
       updateTest,
       deleteTest,
+      markAttendance,
+      updateAttendance,
+      getAttendanceByGroup,
+      getAttendanceByStudent,
     }}>
       {children}
     </StudentContext.Provider>
